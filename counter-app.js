@@ -8,7 +8,7 @@ import { I18NMixin } from "@haxtheweb/i18n-manager/lib/I18NMixin.js";
 
 /**
  * `counter-app`
- * 
+ * A simple counter web component with min/max limits and confetti effect
  * @demo index.html
  * @element counter-app
  */
@@ -18,39 +18,23 @@ export class CounterApp extends DDDSuper(I18NMixin(LitElement)) {
     return "counter-app";
   }
 
+  /**
+   * Constructor - initializes default values for counter, min, and max
+   */
   constructor() {
     super();
-    this.title = "";
     this.counter = 0;
-    this.min = -10;
-    this.max = 25;
-    this.confettiTrigger = 21;
-
-    this.t = this.t || {};
-    this.t = {
-      ...this.t,
-      title: "Title",
-    };
-    this.registerLocalization({
-      context: this,
-      localesPath:
-        new URL("./locales/counter-app.ar.json", import.meta.url).href +
-        "/../",
-      locales: ["ar", "es", "hi", "zh"],
-    });
+    this.min = 0;
+    this.max = 100;
   }
-
-
 
   // Lit reactive properties
   static get properties() {
     return {
       ...super.properties,
-      title: { type: String },
-      counter: { type: Number},
-      min: { type: Number},
-      max: { type: Number},
-      confettiTrigger: { type: Number, attribute: 'confetti-trigger' },
+      counter: { type: Number },
+      min: { type: Number },
+      max: { type: Number }
     };
   }
 
@@ -60,166 +44,180 @@ export class CounterApp extends DDDSuper(I18NMixin(LitElement)) {
     css`
       :host {
         display: block;
-        color: var(--ddd-theme-default-link);
-        background-color: var(--ddd-theme-default-linkLight);
+        padding: var(--ddd-spacing-4);
         font-family: var(--ddd-font-primary);
       }
+
       .wrapper {
-        margin: var(--ddd-spacing-2);
-        padding: var(--ddd-spacing-4);
-      }
-      confetti.container {
-        display: block;
-      }
-      h3 span {
-        font-size: var(--counter-app-label-font-size, var(--ddd-lh-120));
+        text-align: center;
       }
 
       .counter {
-        font-size: var(--counter-app-counter-font-size, var(--ddd-lh-120));
-        text-align: center;
-        margin-bottom: var(--ddd-spacing-4);
-        transition: color 0.3s ease-in-out;
-        color: var(--ddd-theme-default-infoLightt);
+        font-size: var(--ddd-font-size-4xl);
+        font-weight: var(--ddd-font-weight-bold);
+        margin: var(--ddd-spacing-4) 0;
+        color: var(--ddd-theme-default-potentialMidnight);
       }
 
-      .counter.min, .counter.max {
+      .counter.eighteen {
         color: var(--ddd-theme-default-original87Pink);
       }
 
-      .counter.threshold-18 {
-        color: var(--ddd-theme-default-athertonViolet);
+      .counter.twentyone {
+        color: var(--ddd-theme-default-opportunityGreen);
       }
-      .counter.threshold-21 {
-        color: var(--ddd-theme-default-creekTeal);
-      } 
+
+      .counter.min-max {
+        color: var(--ddd-theme-default-nittanyNavy);
+      }
 
       .buttons {
         display: flex;
         justify-content: center;
-        gap: var(--ddd-spacing-3);
+        gap: var(--ddd-spacing-4);
+        margin-top: var(--ddd-spacing-4);
       }
 
       button {
-          padding: var(--ddd-spacing-2) var(--ddd-spacing-4);
-          font-size: var(--ddd-font-size-s);
-          border: var(--ddd-border-xs);
-          border-radius: var(--ddd-radius-sm);
-          cursor: pointer;
-          background: var(--ddd-theme-default-creekTeal);
-          color: var(--ddd-theme-default-white); 
-          transition: background-color 0.3s ease;
-        } 
-      button:hover:not(:disabled),
-        button:focus:not(:disabled) {
-          background: var(--ddd-theme-default-creekTeal);
-          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-          outline: none;
-        }
+        padding: var(--ddd-spacing-4) var(--ddd-spacing-8);
+        font-size: var(--ddd-font-size-xl);
+        font-weight: var(--ddd-font-weight-bold);
+        color: var(--ddd-theme-default-white);
+        border: none;
+        border-radius: var(--ddd-radius-sm);
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.05s ease;
+      }
 
-        button:disabled {
-          background-color: var(--ddd-theme-default-disabled);
-          color: var(--ddd-theme-default-white);
-          opacity: 0.2;
-          cursor: not-allowed;
-        }
-      `,  
+      /* Explicit, high-contrast colors for visibility */
+      button.decrement {
+        background-color: #dc3545; /* red */
+      }
+      button.decrement:hover:not(:disabled) {
+        background-color: #c82333;
+      }
+
+      button.increment {
+        background-color: #007bff; /* blue */
+      }
+      button.increment:hover:not(:disabled) {
+        background-color: #0056b3;
+      }
+
+      button:active:not(:disabled) {
+        transform: translateY(1px);
+      }
+
+      button:focus {
+        outline: 2px solid var(--ddd-theme-default-keystoneYellow);
+        outline-offset: var(--ddd-spacing-1);
+      }
+
+      button:disabled {
+        background-color: var(--ddd-theme-default-limestoneLight);
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+    `,  
     ];
   }
 
-    render() {
+  /**
+   * Render method - returns the HTML template for the component
+   */
+  render() {
     return html`
-      <div class="wrapper">
-        <confetti-container id="confetti">
-          <div class="counter ${this._getThresholdClass()}">${this.counter}</div>
+      <confetti-container id="confetti">
+        <div class="wrapper">
+          <div class="counter ${this.getCounterClass()}">
+            ${this.counter}
+          </div>
           <div class="buttons">
             <button
-              @click=${this._decrement}
-              ?disabled=${this.counter === this.min}
+              class="decrement"
+              @click="${this.decrement}"
+              ?disabled="${this.counter === this.min}"
+              aria-label="Decrement"
+              title="Decrement"
             >
-              -1
+              -
             </button>
             <button
-              @click=${this._increment}
-              ?disabled=${this.counter === this.max}
+              class="increment"
+              @click="${this.increment}"
+              ?disabled="${this.counter === this.max}"
+              aria-label="Increment"
+              title="Increment"
             >
-              +1
+              +
             </button>
           </div>
-        </confetti-container>
-      </div>
+        </div>
+      </confetti-container>
     `;
   }
 
-  _increment = () => {
+  /**
+   * Increment the counter by 1, but don't exceed max
+   */
+  increment() {
     if (this.counter < this.max) {
-      this.counter += 1;
+      this.counter++;
     }
-  };
+  }
 
-  _decrement = () => {
+  /**
+   * Decrement the counter by 1, but don't go below min
+   */
+  decrement() {
     if (this.counter > this.min) {
-      this.counter -= 1;
+      this.counter--;
     }
-  };
+  }
 
-  _getThresholdClass() {
+  /**
+   * Get the CSS class for the counter value based on current value
+   */
+  getCounterClass() {
     if (this.counter === this.min || this.counter === this.max) {
-      return 'max';
+      return 'min-max';
     }
     if (this.counter === 21) {
-      return 'threshold-21';
+      return 'twentyone';
     }
     if (this.counter === 18) {
-      return 'threshold-18';
+      return 'eighteen';
     }
     return '';
   }
 
+  /**
+   * Lifecycle method called when properties change
+   * Triggers confetti when counter reaches 21
+   */
   updated(changedProperties) {
     if (super.updated) {
       super.updated(changedProperties);
     }
-
     if (changedProperties.has('counter')) {
-      console.log(`${this.counter}, ${this.confettiTrigger}`);
-      if (this.counter === this.confettiTrigger) {
+      if (this.counter === 21) {
         this.makeItRain();
       }
     }
   }
 
-
-
+  /**
+   * Dynamically imports confetti library and triggers the confetti effect
+   */
   makeItRain() {
-    import("@haxtheweb/multiple-choice/lib/confetti-container.js").then(() => {
-      setTimeout(() => {
-        this.shadowRoot
-          .querySelector("#confetti")
-          .setAttribute("popped", "");
-      }, 0);
-    });
+    import("@haxtheweb/multiple-choice/lib/confetti-container.js").then(
+      (module) => {
+        setTimeout(() => {
+          this.shadowRoot.querySelector("#confetti").setAttribute("popped", "");
+        }, 0);
+      }
+    );
   }
-
-  /* // Lit render the HTML
-  render() {
-    return html`
-      <div class="wrapper">
-        <confetti-container id="confetti"></confetti-container>
-        <div class="counter">21</div>
-          <div class="buttons">
-            <button>-1</button>
-            <button>+1</button>
-        </div>
-    </div>
-
-    `;
-  } */
-/* <div class="wrapper">
-  <h3><span>${this.t.title}:</span> ${this.title}</h3>
-  <slot></slot>
-</div> */
-  
 
   /**
    * haxProperties integration via file reference
